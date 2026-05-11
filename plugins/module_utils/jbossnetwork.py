@@ -17,14 +17,16 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from ansible_collections.middleware_automation.common.plugins.module_utils.constants import (
-    QUERY_PAGE_SIZE,
+    QUERY_LIMIT,
+    PAGE_FIELD,
+    LIMIT_FIELD,
+    TOTAL_PAGES_FIELD,
+    DATA_FIELD,
     NEXT_CURSOR_FIELD,
     RESULTS_FIELD,
     DEFAULT_SCOPE,
-    CURSOR_FIELD,
-    PAGE_SIZE_FIELD,
-    SEARCH_PARAM_CATEGORY,
-    SEARCH_PARAM_TYPE,
+    SEARCH_PARAM_PRODUCT_CODE,
+    SEARCH_PARAM_CONTENT_TYPE,
     SEARCH_PARAM_VERSION,
     SEARCH_PARAM_ID,
     SEARCH_PARAM_NAME
@@ -67,8 +69,8 @@ def get_authenticated_session(module, sso_url, validate_certs, client_id, client
 
 def generate_search_params(product_category, product_id, product_type, product_version):
     search_params = {
-        SEARCH_PARAM_CATEGORY: product_category,
-        SEARCH_PARAM_TYPE: product_type,
+        SEARCH_PARAM_PRODUCT_CODE: product_category,
+        SEARCH_PARAM_CONTENT_TYPE: product_type,
         SEARCH_PARAM_VERSION: product_version,
         SEARCH_PARAM_ID: product_id,
         # Not Implemented
@@ -80,7 +82,7 @@ def generate_search_params(product_category, product_id, product_type, product_v
 
 def perform_search(session, url, validate_certs, params=None):
 
-    nextCursor = None
+    page = 1
     results = []
 
     if params is None:
@@ -88,15 +90,10 @@ def perform_search(session, url, validate_certs, params=None):
 
     while True:
 
-        pagination_params = {}
-
-        # Provide parameters
-        if nextCursor is not None:
-            pagination_params.update({CURSOR_FIELD: nextCursor})
-            params = {}
-        else:
-            pagination_params.update({PAGE_SIZE_FIELD: QUERY_PAGE_SIZE})
-            params.pop(CURSOR_FIELD, None)
+        pagination_params = {
+            PAGE_FIELD: page,
+            LIMIT_FIELD: QUERY_LIMIT
+        }
 
         params.update(pagination_params)
 
@@ -117,12 +114,22 @@ def perform_search(session, url, validate_certs, params=None):
 
         query_result_json = json.loads(query_request.read())
 
-        results.extend(
-            query_result_json[RESULTS_FIELD])
+        if DATA_FIELD in query_result_json:
+            results.extend(query_result_json[DATA_FIELD])
+        elif RESULTS_FIELD in query_result_json:
+            results.extend(query_result_json[RESULTS_FIELD])
+        else:
+            results.append(query_result_json)
 
-        if NEXT_CURSOR_FIELD not in query_result_json or query_result_json[NEXT_CURSOR_FIELD] is None:
+        if TOTAL_PAGES_FIELD in query_result_json:
+            total_pages = query_result_json[TOTAL_PAGES_FIELD]
+            if page >= total_pages:
+                break
+        elif NEXT_CURSOR_FIELD in query_result_json and query_result_json[NEXT_CURSOR_FIELD] is None:
+            break
+        else:
             break
 
-        nextCursor = query_result_json[NEXT_CURSOR_FIELD]
+        page += 1
 
     return results

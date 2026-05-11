@@ -3,8 +3,8 @@
   hosts: localhost
   gather_facts: yes
   vars:
-    client_id: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_CLIENTID') }}"
-    client_secret: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_SECRET') }}"
+    client_id: "{{ lookup('env', 'REDHAT_PRODUCT_DOWNLOAD_CLIENT_ID') }}"
+    client_secret: "{{ lookup('env', 'REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET') }}"
     rhbk_download_dir: "/tmp"
     rhbk_major_version: "26"
   tasks:
@@ -15,8 +15,8 @@
       block:
         - name: Search RHBK Product
           middleware_automation.common.product_search:
-            client_id: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_CLIENTID') }}"
-            client_secret: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_SECRET') }}"
+            client_id: "{{ client_id }}"
+            client_secret: "{{ client_secret }}"
             product_type: DISTRIBUTION
             product_version: "{{ rhbk_major_version }}"
             product_category: core
@@ -25,11 +25,11 @@
 
         - name: Search install zipfile
           ansible.builtin.set_fact:
-            rhn_filtered_products: "{{ rhn_products.results | selectattr('file_path', 'match', '[^/]*/rhbk-[0-9]+\\.[0-9]+.*\\.zip$') }}"
+            rhn_filtered_products: "{{ rhn_products.results | selectattr('file_name', 'match', '[^/]*/rhbk-[0-9]+\\.[0-9]+.*\\.zip$') }}"
 
         - name: Display found RHBK distributions
           ansible.builtin.debug:
-            msg: "Found RHBK distributions: {{ rhn_filtered_products | map(attribute='file_path') | list }}"
+            msg: "Found RHBK distributions: {{ rhn_filtered_products | map(attribute='file_name') | list }}"
 
         - name: Ensure at least one RHBK distribution was found
           ansible.builtin.assert:
@@ -55,10 +55,10 @@
           ansible.builtin.debug:
             msg: "Downloading latest RHBK version {{ latest_rhbk_version }} (product id {{ latest_rhbk_product.id }})"
 
-        - name: Download latest RHBK distribution from JBoss Network API
+        - name: Download latest RHBK distribution from Unified Downloads API
           middleware_automation.common.product_download:
-            client_id: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_CLIENTID') }}"
-            client_secret: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_SECRET') }}"
+            client_id: "{{ client_id }}"
+            client_secret: "{{ client_secret }}"
             product_id: "{{ latest_rhbk_product.id }}"
             product_category: core
             product_type: DISTRIBUTION
@@ -89,10 +89,10 @@
             fail_msg: "Downloaded RHBK file missing or empty at {{ rhbk_download.dest }}"
           when: latest_rhbk_product is defined
 
-        - name: Retrieve product download using JBossNetwork API
+        - name: Retrieve product patches using Unified Downloads API
           middleware_automation.common.product_search:
-            client_id: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_CLIENTID') }}"
-            client_secret: "{{ lookup('env', 'PROD_JBOSSNETWORK_API_SECRET') }}"
+            client_id: "{{ client_id }}"
+            client_secret: "{{ client_secret }}"
             product_type: BUGFIX
             product_version: "{{ rhbk_major_version }}"
             product_category: core
@@ -101,7 +101,7 @@
 
         - name: Determine patch versions list
           ansible.builtin.set_fact:
-            filtered_versions: "{{ rhn_products.results | map(attribute='file_path') | select('match', '^[^/]*/rhbk-.*[0-9]*[.][0-9]*.*$') | map('regex_replace','[^/]*/rhbk-([0-9]*[.][0-9]*)-.*','\\1' ) | list | unique }}"
+            filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/rhbk-.*[0-9]*[.][0-9]*.*$') | map('regex_replace','[^/]*/rhbk-([0-9]*[.][0-9]*)-.*','\\1' ) | list | unique }}"
 
         - name: Determine latest version
           ansible.builtin.debug:
@@ -115,7 +115,7 @@
 
     - name: Skip message when credentials not provided
       ansible.builtin.debug:
-        msg: "Skipping RHBK prod scenario - set PROD_JBOSSNETWORK_API_CLIENTID and PROD_JBOSSNETWORK_API_SECRET to test download"
+        msg: "Skipping RHBK prod scenario - set UNIFIED_DOWNLOADS_API_CLIENTID and UNIFIED_DOWNLOADS_API_SECRET to test download"
       when:
         - client_id is not defined or client_id | length == 0 or client_secret is not defined or client_secret | length == 0
 
