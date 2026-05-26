@@ -19,7 +19,7 @@
             client_secret: "{{ client_secret }}"
             product_type: DISTRIBUTION
             product_version: "{{ rhbk_major_version }}"
-            product_category: core
+            product_category: RHBK
           register: rhn_products
           no_log: false
 
@@ -60,8 +60,6 @@
             client_id: "{{ client_id }}"
             client_secret: "{{ client_secret }}"
             product_id: "{{ latest_rhbk_product.id }}"
-            product_category: core
-            product_type: DISTRIBUTION
             dest: "{{ rhbk_download_dir }}/rhbk-{{ latest_rhbk_version }}-distribution.zip"
           register: rhbk_download
           no_log: true
@@ -95,13 +93,13 @@
             client_secret: "{{ client_secret }}"
             product_type: BUGFIX
             product_version: "{{ rhbk_major_version }}"
-            product_category: core
+            product_category: RHBK
           register: rhn_products
           no_log: true
 
         - name: Determine patch versions list
           ansible.builtin.set_fact:
-            filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/rhbk-.*[0-9]*[.][0-9]*.*$') | map('regex_replace','[^/]*/rhbk-([0-9]*[.][0-9]*)-.*','\\1' ) | list | unique }}"
+            filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/rhbk-[0-9]+\\.[0-9]+.*$') | map('regex_replace','^[^/]*/rhbk-([0-9]+\\.[0-9]+).*$','\\1' ) | list | unique }}"
 
         - name: Determine latest version
           ansible.builtin.debug:

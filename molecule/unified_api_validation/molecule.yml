@@ -1,5 +1,17 @@
 ---
+# Scenario-specific configuration (inherits from .config/molecule/config.yml)
 provisioner:
   env:
     REDHAT_PRODUCT_DOWNLOAD_CLIENT_ID: "${UNIFIED_DOWNLOADS_API_CLIENTID}"
     REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET: "${UNIFIED_DOWNLOADS_API_SECRET}"
+
+scenario:
+  test_sequence:
+    - cleanup
+    - destroy
+    - create
+    - prepare
+    - converge
+    - verify
+    - cleanup
+    - destroy

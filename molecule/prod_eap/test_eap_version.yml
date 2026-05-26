@@ -29,7 +29,7 @@
 
 - name: "Determine EAP {{ eap_version.version }} patch versions list"
   ansible.builtin.set_fact:
-    filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/jboss-eap-.*[0-9]*[.][0-9]*[.][0-9]*.*$') | map('regex_replace','[^/]*/jboss-eap-([0-9]*[.][0-9]*[.][0-9]*)-.*','\\1' ) | list | unique }}"
+    filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/jboss-eap-[0-9]+\\.[0-9]+\\.[0-9]+.*$') | map('regex_replace','^[^/]*/jboss-eap-([0-9]+\\.[0-9]+\\.[0-9]+).*$','\\1' ) | list | unique }}"
 
 - name: "Determine EAP {{ eap_version.version }} latest patch version"
   ansible.builtin.debug:

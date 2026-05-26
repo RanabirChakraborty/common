@@ -3,8 +3,8 @@
   hosts: localhost
   gather_facts: no
   vars:
-    client_id: "{{ lookup('env', 'UNIFIED_DOWNLOADS_API_CLIENTID') }}"
-    client_secret: "{{ lookup('env', 'UNIFIED_DOWNLOADS_API_SECRET') }}"
+    client_id: "{{ lookup('env', 'STAGE_JBOSSNETWORK_API_CLIENTID') }}"
+    client_secret: "{{ lookup('env', 'STAGE_JBOSSNETWORK_API_SECRET') }}"
     eap_versions:
       - version: '7.4'
         zip_pattern: '[^/]*/jboss-eap-7.4.0.zip$'
