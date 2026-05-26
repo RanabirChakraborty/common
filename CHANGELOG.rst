@@ -4,6 +4,14 @@ middleware\_automation.common Release Notes
 
 .. contents:: Topics
 
+v1.2.4
+======
+
+Major Changes
+-------------
+
+- AMW-425 Transition from CSP to Unified Downloads `#38 <https://github.com/ansible-middleware/common/pull/38>`_
+
 v1.2.3
 ======
 

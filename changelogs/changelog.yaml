@@ -94,3 +94,12 @@ releases:
     - 30.yaml
     - 33.yaml
     release_date: '2026-03-25'
+  1.2.4:
+    changes:
+      major_changes:
+      - 'AMW-425 Transition from CSP to Unified Downloads `#38 <https://github.com/ansible-middleware/common/pull/38>`_
+
+        '
+    fragments:
+    - 38.yaml
+    release_date: '2026-05-26'
