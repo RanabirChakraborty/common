@@ -22,8 +22,8 @@ This collection has been tested against following Python versions: **>=3.6**.
 
 ### Modules
 
-* `product_download`: downloads products from the JBoss Network API
-* `product_search`: searches products from the JBoss Network API
+* `product_download`: downloads products from the Red Hat Unified Downloads API
+* `product_search`: searches products from the Red Hat Unified Downloads API
 * `maven_artifact`: downloads an Artifact from a Maven Repository
 * `xml`: manage bits and pieces of XML files or strings
 

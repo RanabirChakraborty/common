@@ -39,28 +39,28 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: product_download
-author: Andrew Block (@sabre1041)
-short_description: Downloads products from the JBoss Network API.
+author: Andrew Block (@sabre1041), Ranabir Chakraborty (ranabir@ibm.com)
+short_description: Downloads products from the Red Hat Unified Downloads API.
 description:
-    - Downloads products from the JBoss Network API.
+    - Downloads products from the Red Hat Unified Downloads API.
 extends_documentation_fragment:
     - ansible.builtin.files
 options:
     api_url:
         description:
-            - Address of the JBoss Network API.
+            - Address of the Red Hat Unified Downloads API.
         type: str
         required: false
-        default: 'https://jbossnetwork.api.redhat.com'
+        default: 'https://api.access.redhat.com/downloads'
     client_id:
         description:
-            - Client ID associated with to download a product from the JBoss Network API.
+            - Client ID associated with to download a product from the Red Hat Unified Downloads API.
             - If value not set, will try environment variable C(REDHAT_PRODUCT_DOWNLOAD_CLIENT_ID)
         type: str
         required: false
     client_secret:
         description:
-            - Client Secret associated with to download a product from the JBoss Network API.
+            - Client Secret associated with to download a product from the Red Hat Unified Downloads API.
             - If value not set, will try environment variable C(REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET)
         type: str
         required: false
@@ -199,7 +199,7 @@ from ansible_collections.middleware_automation.common.plugins.module_utils.const
     REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET_ENV_VAR,
     API_SERVICE_PATH,
     SEARCH_ENDPOINT,
-    LIST_PRODUCT_CATEGORIES_ENDPOINT
+    LIST_PRODUCT_CODES_ENDPOINT
 )
 
 
@@ -256,7 +256,7 @@ def main():
         product_categories = []
 
         try:
-            product_categories = perform_search(session, "{0}{1}".format(api_base_url, LIST_PRODUCT_CATEGORIES_ENDPOINT), validate_certs)
+            product_categories = perform_search(session, "{0}{1}".format(api_base_url, LIST_PRODUCT_CODES_ENDPOINT), validate_certs)
         except Exception as err:
             module.fail_json(msg="Error Listing Available Product Categories: %s" % (to_native(err)))
 
@@ -286,7 +286,7 @@ def main():
 
         module.fail_json(msg=" ".join(msg))
 
-    file_name = search_results[0]['file_path'].rsplit('/')[-1]
+    file_name = search_results[0]['file_name'].rsplit('/')[-1]
 
     dest_is_dir = os.path.isdir(dest)
 
@@ -321,7 +321,7 @@ def main():
             module.fail_json(msg="Destination %s is not writable" % (os.path.dirname(dest)), **result)
 
     try:
-        r = session.get(search_results[0]["download_path"], follow_redirects=True, headers={"User-Agent": "product_download"})
+        r = session.get(search_results[0]["download_link"], follow_redirects=True, headers={"User-Agent": "product_download"})
         chunk_size = 8192
         with open(dest, 'wb') as f:
             while True:

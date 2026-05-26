@@ -1,0 +1,42 @@
+---
+- name: "Search EAP {{ eap_version.version }} Product"
+  middleware_automation.common.product_search:
+    client_id: "{{ client_id }}"
+    client_secret: "{{ client_secret }}"
+    product_type: DISTRIBUTION
+    product_version: "{{ eap_version.version }}"
+    product_category: "{{ eap_version.category }}"
+  register: rhn_products
+  no_log: false
+
+- name: "Search EAP {{ eap_version.version }} install zipfile"
+  ansible.builtin.set_fact:
+    rhn_filtered_products: "{{ rhn_products.results | selectattr('file_name', 'match', eap_version.zip_pattern) }}"
+
+- name: "Display EAP {{ eap_version.version }} distributions found"
+  ansible.builtin.debug:
+    msg: "Found {{ rhn_filtered_products | length }} EAP {{ eap_version.version }} distributions"
+
+- name: "Retrieve EAP {{ eap_version.version }} product patches using Unified Downloads API"
+  middleware_automation.common.product_search:
+    client_id: "{{ client_id }}"
+    client_secret: "{{ client_secret }}"
+    product_type: BUGFIX
+    product_version: "{{ eap_version.version }}"
+    product_category: "{{ eap_version.category }}"
+  register: rhn_products
+  no_log: true
+
+- name: "Determine EAP {{ eap_version.version }} patch versions list"
+  ansible.builtin.set_fact:
+    filtered_versions: "{{ rhn_products.results | map(attribute='file_name') | select('match', '^[^/]*/jboss-eap-.*[0-9]*[.][0-9]*[.][0-9]*.*$') | map('regex_replace','[^/]*/jboss-eap-([0-9]*[.][0-9]*[.][0-9]*)-.*','\\1' ) | list | unique }}"
+
+- name: "Determine EAP {{ eap_version.version }} latest patch version"
+  ansible.builtin.debug:
+    msg: "JBoss EAP {{ eap_version.version }} most recent CP is version {{ filtered_versions | middleware_automation.common.version_sort | last }}"
+  when: filtered_versions | length > 0
+
+- name: "No patches available for EAP {{ eap_version.version }}"
+  ansible.builtin.debug:
+    msg: "JBoss EAP {{ eap_version.version }} has no patches available"
+  when: filtered_versions | length == 0

@@ -1,5 +1,5 @@
 ---
-- name: Converge
+- name: Validate Unified Downloads API Response Structure
   hosts: localhost
   gather_facts: no
   vars:
@@ -8,24 +8,22 @@
     eap_versions:
       - version: '7.4'
         category: appplatform
-        zip_pattern: '[^/]*/jboss-eap-7.4.0.zip$'
       - version: '8.1'
         category: appplatform
-        zip_pattern: '[^/]*/jboss-eap-8.1.0.zip$'
   tasks:
-    - name: Execute scenario when production credentials are provided
+    - name: Execute validation when production credentials are provided
       when:
         - client_id is defined and client_id | length > 0
         - client_secret is defined and client_secret | length > 0
       block:
-        - name: Test EAP versions
-          include_tasks: test_eap_version.yml
+        - name: Validate API response structure for each EAP version
+          include_tasks: validate_version.yml
           loop: "{{ eap_versions }}"
           loop_control:
             loop_var: eap_version
 
     - name: Skip message when credentials not provided
       ansible.builtin.debug:
-        msg: "Skipping EAP prod scenario - set UNIFIED_DOWNLOADS_API_CLIENTID and UNIFIED_DOWNLOADS_API_SECRET"
+        msg: "Skipping Unified API validation - set UNIFIED_DOWNLOADS_API_CLIENTID and UNIFIED_DOWNLOADS_API_SECRET"
       when:
         - client_id is not defined or client_id | length == 0 or client_secret is not defined or client_secret | length == 0

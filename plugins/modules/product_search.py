@@ -39,26 +39,26 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: product_search
-author: Andrew Block (@sabre1041)
-short_description: Searches products from the JBoss Network API.
+author: Andrew Block (@sabre1041), Ranabir Chakraborty (ranabir@ibm.com)
+short_description: Searches products from the Red Hat Unified Downloads API.
 description:
-    - Searches products from the JBoss Network API.
+    - Searches products from the Red Hat Unified Downloads API.
 options:
     api_url:
         description:
-            - Address of the JBoss Network API.
+            - Address of the Red Hat Unified Downloads API.
         type: str
         required: false
-        default: 'https://jbossnetwork.api.redhat.com'
+        default: 'https://api.access.redhat.com/downloads'
     client_id:
         description:
-            - Client ID associated with to download a product from the JBoss Network API.
+            - Client ID associated with to download a product from the Red Hat Unified Downloads API.
             - If value not set, will try environment variable C(REDHAT_PRODUCT_DOWNLOAD_CLIENT_ID)
         type: str
         required: false
     client_secret:
         description:
-            - Client Secret associated with to download a product from the JBoss Network API.
+            - Client Secret associated with to download a product from the Red Hat Unified Downloads API.
             - If value not set, will try environment variable C(REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET)
         type: str
         required: false
@@ -113,46 +113,43 @@ results:
   returned: success
   type: complex
   contains:
-    category:
-      description: Product category.
+    product_code:
+      description: Product code (category).
       returned: success
       type: str
     description:
       description: Description of the product.
       returned: success
       type: str
-    distribution_status:
-      description: Distribution status of the product.
+    download_link:
+      description: URL where the product can be downloaded.
       returned: success
       type: str
-    download_path:
-      description: URL where the product can be downloaded.
+    file_name:
+      description: File name (may include subdirectory path).
       returned: success
       type: str
     id:
       description: id of the product.
       returned: success
       type: int
-    md5:
-      description: MD5 checksum of the product.
-      returned: success
-      type: str
     name:
       description: Name of the product.
       returned: success
       type: str
     sha256:
-      description: MD5 checksum of the product.
+      description: SHA256 checksum of the product.
       returned: success
       type: str
     title:
       description: Title of the product.
       returned: success
       type: str
-    type:
-      description: Type of product.
+    content_type:
+      description: Type of product (array).
       returned: success
-      type: str
+      type: list
+      elements: str
     version:
       description: Product version.
       returned: success
@@ -184,7 +181,7 @@ from ansible_collections.middleware_automation.common.plugins.module_utils.const
     REDHAT_PRODUCT_DOWNLOAD_CLIENT_SECRET_ENV_VAR,
     API_SERVICE_PATH,
     SEARCH_ENDPOINT,
-    LIST_PRODUCT_CATEGORIES_ENDPOINT
+    LIST_PRODUCT_CODES_ENDPOINT
 )
 
 
@@ -234,7 +231,7 @@ def main():
         product_categories = []
 
         try:
-            product_categories = perform_search(session, "{0}{1}".format(api_base_url, LIST_PRODUCT_CATEGORIES_ENDPOINT), validate_certs)
+            product_categories = perform_search(session, "{0}{1}".format(api_base_url, LIST_PRODUCT_CODES_ENDPOINT), validate_certs)
         except Exception as err:
             module.fail_json(msg="Error Listing Available Product Categories: %s" % (to_native(err)))
 

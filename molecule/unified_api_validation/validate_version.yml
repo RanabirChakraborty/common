@@ -1,0 +1,150 @@
+---
+- name: "Search for EAP {{ eap_version.version }} product to validate response structure"
+  middleware_automation.common.product_search:
+    client_id: "{{ client_id }}"
+    client_secret: "{{ client_secret }}"
+    product_type: DISTRIBUTION
+    product_version: "{{ eap_version.version }}"
+    product_category: "{{ eap_version.category }}"
+  register: search_result
+  no_log: false
+
+- name: "Validate EAP {{ eap_version.version }} search returned results"
+  ansible.builtin.assert:
+    that:
+      - search_result.results is defined
+      - search_result.results | length > 0
+    fail_msg: "Search returned no results for EAP {{ eap_version.version }}"
+    success_msg: "Search returned {{ search_result.results | length }} results for EAP {{ eap_version.version }}"
+
+- name: "Validate Unified API response fields exist for EAP {{ eap_version.version }}"
+  ansible.builtin.assert:
+    that:
+      - item.product_code is defined
+      - item.file_name is defined
+      - item.download_link is defined
+      - item.content_type is defined
+      - item.sha256 is defined
+      - item.id is defined
+      - item.name is defined
+      - item.title is defined
+      - item.version is defined
+      - item.visibility is defined
+    fail_msg: "Response missing Unified API fields for product: {{ item.title | default('unknown') }}"
+    success_msg: "All required Unified API fields present"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.title | default('unknown') }}"
+
+- name: "Validate content_type is an array for EAP {{ eap_version.version }}"
+  ansible.builtin.assert:
+    that:
+      - item.content_type is iterable
+      - item.content_type is not string
+      - item.content_type | length > 0
+    fail_msg: "content_type should be an array, not a string"
+    success_msg: "content_type is correctly an array: {{ item.content_type }}"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.title | default('unknown') }}"
+
+- name: "Validate file_name contains path for EAP {{ eap_version.version }}"
+  ansible.builtin.assert:
+    that:
+      - "'/' in item.file_name"
+    fail_msg: "file_name should contain subdirectory path"
+    success_msg: "file_name correctly contains path: {{ item.file_name }}"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.file_name | default('unknown') }}"
+
+- name: "Validate download_link is a URL for EAP {{ eap_version.version }}"
+  ansible.builtin.assert:
+    that:
+      - item.download_link is match('^https?://')
+    fail_msg: "download_link should be a valid URL"
+    success_msg: "download_link is valid: {{ item.download_link }}"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.title | default('unknown') }}"
+
+- name: "Validate SHA256 checksum format for EAP {{ eap_version.version }}"
+  ansible.builtin.assert:
+    that:
+      - item.sha256 is match('^[a-f0-9]{64}$')
+    fail_msg: "SHA256 checksum has invalid format"
+    success_msg: "SHA256 checksum is valid"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.title | default('unknown') }}"
+
+- name: "Validate old fields are NOT present for EAP {{ eap_version.version }} (breaking changes)"
+  ansible.builtin.assert:
+    that:
+      - item.category is not defined
+      - item.file_path is not defined
+      - item.download_path is not defined
+      - item.md5 is not defined
+      - item.distribution_status is not defined
+    fail_msg: "Old API fields should not be present in Unified API response"
+    success_msg: "Old API fields correctly absent"
+  loop: "{{ search_result.results[:3] }}"
+  loop_control:
+    label: "{{ item.title | default('unknown') }}"
+
+- name: "Test product download functionality for EAP {{ eap_version.version }}"
+  block:
+    - name: "Find a small test file for EAP {{ eap_version.version }}"
+      ansible.builtin.set_fact:
+        test_product: "{{ search_result.results | selectattr('file_name', 'search', '.txt') | first }}"
+      when: search_result.results | selectattr('file_name', 'search', '.txt') | list | length > 0
+
+    - name: "Download test product by ID for EAP {{ eap_version.version }}"
+      middleware_automation.common.product_download:
+        client_id: "{{ client_id }}"
+        client_secret: "{{ client_secret }}"
+        product_id: "{{ test_product.id }}"
+        dest: "/tmp/unified_api_test_download_{{ eap_version.version }}"
+      register: download_result
+      when: test_product is defined
+
+    - name: "Validate download succeeded for EAP {{ eap_version.version }}"
+      ansible.builtin.assert:
+        that:
+          - download_result.changed
+          - download_result.dest is defined
+          - download_result.dest is match('^/tmp/')
+        success_msg: "Download successful: {{ download_result.dest }}"
+        fail_msg: "Download failed"
+      when: test_product is defined
+
+    - name: "Verify downloaded file exists for EAP {{ eap_version.version }}"
+      ansible.builtin.stat:
+        path: "{{ download_result.dest }}"
+      register: downloaded_file
+      when: test_product is defined
+
+    - name: "Validate file was downloaded for EAP {{ eap_version.version }}"
+      ansible.builtin.assert:
+        that:
+          - downloaded_file.stat.exists
+          - downloaded_file.stat.size > 0
+        success_msg: "File downloaded successfully ({{ downloaded_file.stat.size }} bytes)"
+        fail_msg: "Downloaded file missing or empty"
+      when: test_product is defined
+
+    - name: "Cleanup test download for EAP {{ eap_version.version }}"
+      ansible.builtin.file:
+        path: "/tmp/unified_api_test_download_{{ eap_version.version }}"
+        state: absent
+      when: test_product is defined
+
+- name: "Display validation summary for EAP {{ eap_version.version }}"
+  ansible.builtin.debug:
+    msg: |
+      Unified Downloads API Validation Complete for EAP {{ eap_version.version }}
+      - Response structure validated
+      - All new field names present
+      - content_type is array format
+      - Old field names correctly absent
+      - Download functionality working
