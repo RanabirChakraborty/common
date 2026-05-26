@@ -9,11 +9,11 @@ Collection containing common utilities to support Ansible Middleware automation
 <!--start requires_ansible-->
 ## Ansible version compatibility
 
-This collection has been tested against following Ansible versions: **>=2.14.0**.
+This collection has been tested against following Ansible versions: **>=2.16.0**.
 
 ## Python version compatibility
 
-This collection has been tested against following Python versions: **>=3.6**.
+This collection has been tested against following Python versions: **>=3.12**.
 
 <!--end requires_ansible-->
 
@@ -59,9 +59,22 @@ To install all the dependencies via galaxy:
 
     pip install -r requirements.txt
 
+
+## Support
+
 <!--start support -->
+
+For bug reports and feature requests, use [GitHub Issues](https://github.com/ansible-middleware/common/issues).
+
 <!--end support -->
+
+
+## Release and Upgrade Notes
+
+For details on changes between versions, please see the [CHANGELOG](https://github.com/ansible-middleware/common/blob/main/CHANGELOG.rst) for this collection.
 
 ## License
 
-[Apache License 2.0](https://github.com/ansible-middleware/common/blob/main/LICENSE)
+Apache License v2.0 or later
+
+See [LICENSE](LICENSE) to view the full text.
